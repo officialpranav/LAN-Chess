@@ -20,6 +20,23 @@ const io = new Server(server, {
 const chess = new Chess()
 
 const sendPosition = (emitter) => {
+  let moveType = 'move'
+  if(chess.history().length > 0) {
+    let lastMove = chess.history({verbose: true})[chess.history().length - 1]
+    if(lastMove.flags.includes('k') || lastMove.flags.includes('q')) {
+      moveType = 'castle'
+    }
+    if(lastMove.flags.includes('e') || lastMove.flags.includes('c')) {
+      moveType = 'capture'
+    }
+    if(chess.inCheck()) {
+      moveType = 'check'
+    }
+    if(chess.isGameOver()) {
+      moveType = 'gameOver'
+    }
+  }
+
   emitter.emit('position',{
     position: chess.board(),
     turn: chess.turn(),
@@ -27,9 +44,10 @@ const sendPosition = (emitter) => {
       return {
         from: move.from,
         to: move.to,
+        type: moveType
       }
     }),
-    isCheck: chess.isCheck(), 
+    isCheck: chess.isCheck(),
     isCheckmate: chess.isCheckmate(),
     isDraw: chess.isDraw(),
     isStalemate: chess.isStalemate(),
@@ -39,10 +57,8 @@ const sendPosition = (emitter) => {
 
 io.on('connection', (socket) => {
   sendPosition(socket)
-  console.log('connected')
 
   socket.on('move', (move) => {
-    console.log('moved!')
     chess.move(move)
     sendPosition(io)
   })

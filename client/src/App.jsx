@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react'
-import './App.css'
+import useSound from 'use-sound'
 
 import { io } from 'socket.io-client'
 
-import { bb, bk, bn, bp, bq, br, wb, wk, wn, wp, wq, wr} from './assets'
+import { bb, bk, bn, bp, bq, br, wb, wk, wn, wp, wq, wr, move, check, capture, castle, gameOver} from './assets'
 const icons = { bb, bk, bn, bp, bq, br, wb, wk, wn, wp, wq, wr}
+const sounds = { move, check, capture, castle, gameOver}
 
 const socket = io.connect("http://localhost:3001")
 let numToLetter = ["a","b","c","d","e","f","g","h"]
-let i = 0
+
 function App() {
-
   let dragged = ""
-
   const [board, setBoard] = useState([])
   const [availableMoves, setAvailableMoves] = useState([])
   const [selectedSquare, setSelectedSquare] = useState('d')
@@ -25,6 +24,14 @@ function App() {
   }])
   const [history, setHistory] = useState([])
 
+  const soundboard = {
+    move: useSound(sounds.move)[0],
+    check: useSound(sounds.check)[0],
+    capture: useSound(sounds.capture)[0],
+    castle: useSound(sounds.castle)[0],
+    gameOver: useSound(sounds.gameOver)[0]
+  }
+
   const getMoves = async (square) => {
     let result = await fetch(`http://localhost:3001/moves?square=${square}`)
     let data = await result.json()
@@ -32,21 +39,35 @@ function App() {
     setAvailableMoves(moves)
   }
 
-  socket.once('position', (data) => {
-    setBoard(data.position)
-    setTurn(data.turn)
-    setIsCheck(data.isCheck)
-    setIsGameOver([data.isGameOver, {
-      isCheckmate: data.isCheckmate,
-      isDraw: data.isDraw,
-      isStalemate: data.isStalemate
-    }])
-    i++
-    console.log(i)
-    setHistory(data.history)
-  })
+  useEffect(() => {
+    const handlePosition = (data) => {
+      setBoard(data.position)
+      setTurn(data.turn)
+      setIsCheck(data.isCheck)
+      setIsGameOver([data.isGameOver, {
+        isCheckmate: data.isCheckmate,
+        isDraw: data.isDraw,
+        isStalemate: data.isStalemate
+      }])
+      setHistory(data.history)
+    }
+  
+    socket.on('position', handlePosition)
+  
+    return () => {
+      socket.off('position', handlePosition)
+    }
+  }, [])
 
-  const handleSquareClick = async (e) => {
+  useEffect(() => {
+    if(history.length > 0) {
+      let lastMove = history[history.length-1]
+      soundboard[lastMove.type]()
+    }
+  }, [history])
+
+  //click
+  const handleSquareClick = (e) => {
     let square = e.target.getAttribute('square')
 
     if(selectedSquare !== square) {
@@ -63,7 +84,7 @@ function App() {
       setAvailableMoves([])
     }
   }
-
+  //drag and drop
   const handleDragStart = async (e) => {
     dragged = e.target.getAttribute('square')
 
@@ -73,7 +94,6 @@ function App() {
       getMoves(square)
     }
   }
-
   const handleDrop = (e) => {
     e.preventDefault()
 
@@ -105,9 +125,7 @@ function App() {
                     draggable="true"
                     /> : ""
                 }
-                {(square != null && square.type === 'k' && isCheck && square.color===turn) && <div square={`${numToLetter[j]}${8-i}`} className='absolute bg-red-600 bg-opacity-70 h-full w-full z-10'/>}
-                {availableMoves.includes(`${numToLetter[j]}${8-i}`) && <div square={`${numToLetter[j]}${8-i}`} className='absolute bg-black bg-opacity-50 h-full w-full z-20'/>}
-                {lastMoveOverlay({square: `${numToLetter[j]}${8-i}`})}
+                {squareUnderlay({square: square, coord: `${numToLetter[j]}${8-i}`, history: history, availableMoves: availableMoves, isCheck: isCheck, turn: turn, selectedSquare: selectedSquare})}
               </div>
             )
         }))}
@@ -118,23 +136,54 @@ function App() {
       <button 
         className='w-[400px]'
         onClick={() => {
-        socket.emit('reset')
+          socket.emit('reset')
+          setAvailableMoves([])
         }}
       >reset</button>
     </div>
   )
 }
 
-function lastMoveOverlay({square}){
-  if(history.length > 0) {
-    if(square === history.from || square === history.to) {
-      console.log(square)
-      return(
-        <div className='absolute bg-yellow-300 bg-opacity-70 h-full w-full z-20'/>
-      )
 
+function squareUnderlay({square, coord, history, availableMoves, isCheck, turn, selectedSquare}){
+  let availableMove = null
+  let bg = ''
+  if(availableMoves.includes(coord)) {
+    if(square != null) {
+      availableMove = <div style={{
+        border: '4px solid black',
+        borderRadius: '50%',
+        height: '100%',
+        width: '100%',
+        opacity: '0.2'
+      }} 
+      square={coord}
+      />
+    } else {
+      availableMove = <div square={coord} className='rounded-full bg-black bg-opacity-20 h-[40%] w-[40%]'/>
     }
   }
+
+  if(history.length > 0) {
+    let lastMove = history[history.length-1]
+    if(coord === lastMove.from || coord === lastMove.to) {
+      bg='bg-yellow-300 bg-opacity-65'
+    }
+  }
+  
+  if(selectedSquare === coord && square != null) {
+    bg='bg-yellow-300 bg-opacity-65'
+  }
+
+  if(square != null && square.type === 'k' && isCheck && square.color===turn) {
+    bg='bg-red-600 bg-opacity-70'
+  }
+
+  return (
+    <div square={coord} className={`absolute ${bg} z-10 w-full h-full flex items-center justify-center`}>
+      {availableMove}
+    </div>
+  )
 }
 
 export default App
