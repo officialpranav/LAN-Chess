@@ -15,5 +15,6 @@ import check from './sounds/check.mp3'
 import capture from './sounds/capture.mp3'
 import castle from './sounds/castle.mp3'
 import gameOver from './sounds/game-end.mp3'
+import background from './images/parchment-bg.jpg'
 
-export { bb, bk, bn, bp, bq, br, wb, wk, wn, wp, wq, wr, move, check, capture, castle, gameOver}
+export { bb, bk, bn, bp, bq, br, wb, wk, wn, wp, wq, wr, move, check, capture, castle, gameOver, background}

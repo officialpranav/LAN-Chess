@@ -44,7 +44,8 @@ const sendPosition = (emitter) => {
       return {
         from: move.from,
         to: move.to,
-        type: moveType
+        type: moveType,
+        san: move.san
       }
     }),
     isCheck: chess.isCheck(),
@@ -65,6 +66,11 @@ io.on('connection', (socket) => {
 
   socket.on('reset', () => {
     chess.reset()
+    sendPosition(io)
+  })
+
+  socket.on('undo', () => {
+    chess.undo()
     sendPosition(io)
   })
 })

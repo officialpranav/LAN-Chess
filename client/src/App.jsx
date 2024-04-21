@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useSound from 'use-sound'
 
 import { io } from 'socket.io-client'
@@ -11,7 +11,16 @@ const socket = io.connect("http://localhost:3001")
 let numToLetter = ["a","b","c","d","e","f","g","h"]
 
 function App() {
+  const tableEnd = useRef(null)
   let dragged = ""
+  const soundboard = {
+    move: useSound(sounds.move)[0],
+    check: useSound(sounds.check)[0],
+    capture: useSound(sounds.capture)[0],
+    castle: useSound(sounds.castle)[0],
+    gameOver: useSound(sounds.gameOver)[0]
+  }
+
   const [board, setBoard] = useState([])
   const [availableMoves, setAvailableMoves] = useState([])
   const [selectedSquare, setSelectedSquare] = useState('d')
@@ -23,20 +32,20 @@ function App() {
     isStalemate: false
   }])
   const [history, setHistory] = useState([])
+  const [color, setColor] = useState('')
+  const [gameId, setGameId] = useState('')
+  const [player, setPlayer] = useState('')
+  const [opponent, setOpponent] = useState('')
 
-  const soundboard = {
-    move: useSound(sounds.move)[0],
-    check: useSound(sounds.check)[0],
-    capture: useSound(sounds.capture)[0],
-    castle: useSound(sounds.castle)[0],
-    gameOver: useSound(sounds.gameOver)[0]
-  }
+
 
   const getMoves = async (square) => {
-    let result = await fetch(`http://localhost:3001/moves?square=${square}`)
-    let data = await result.json()
-    let moves = data.moves.map(move => move.to)
-    setAvailableMoves(moves)
+    if(true) {
+      let result = await fetch(`http://localhost:3001/moves?square=${square}`)
+      let data = await result.json()
+      let moves = data.moves.map(move => move.to)
+      setAvailableMoves(moves)
+    }
   }
 
   useEffect(() => {
@@ -64,7 +73,16 @@ function App() {
       let lastMove = history[history.length-1]
       soundboard[lastMove.type]()
     }
+    setSelectedSquare('')
+    setAvailableMoves([])
+    tableEnd.current?.scrollIntoView({behavior: 'smooth'})
   }, [history])
+
+  const movePiece = (move) => {
+    if(true) {
+      socket.emit('move', move)
+    }
+  }
 
   //click
   const handleSquareClick = (e) => {
@@ -72,9 +90,7 @@ function App() {
 
     if(selectedSquare !== square) {
       if(availableMoves.includes(square)) {
-        socket.emit('move', `${selectedSquare}${square}`)
-        setSelectedSquare('')
-        setAvailableMoves([])
+        movePiece(`${selectedSquare}${square}`)
       } else {
         setSelectedSquare(square)
         getMoves(square)
@@ -100,14 +116,12 @@ function App() {
     let square = e.target.getAttribute('square')
 
     if(availableMoves.includes(square)) {
-      socket.emit('move', `${selectedSquare}${square}`)
-      setSelectedSquare('')
-      setAvailableMoves([])
+      movePiece(`${selectedSquare}${square}`)
     }
   }
 
   return (
-    <div className='absolute flex flex-col items-center justify-center h-full w-full select-none'>
+    <div className='absolute flex flex-wrap gap-3 items-center justify-center h-full w-full select-none'>
       <div id="board" className='grid-rows-8 grid-cols-8 grid text-black h-[400px] w-[400px]'>
         {board.map((row, i) => row.map((square, j) => {
           let bgColor = (i+j)%2 === 1 ? 'bg-[#739552]' : 'bg-[#EBECD0]'
@@ -133,13 +147,45 @@ function App() {
           game over: {isGameOver[1].isCheckmate ? 'checkmate' : isGameOver[1].isDraw ? 'draw' : isGameOver[1].isStalemate ? 'stalemate' : ''}
         </div>}
       </div>
-      <button 
-        className='w-[400px]'
-        onClick={() => {
-          socket.emit('reset')
-          setAvailableMoves([])
-        }}
-      >reset</button>
+      <div className='h-[400px] gap-3 w-96 bg-zinc-700 bg-opacity-90 rounded-xl p-3 flex flex-col'>
+        <div>
+          <p>Player 1</p>
+        </div>
+        <div className='flex flex-col gap-3 grow justify-center'>
+          <div className='h-40 overflow-auto bg-zinc-900 bg-opacity-35 rounded-xl p-2 select-text'>
+            <table className='w-3/5 table-auto'>
+              {history.map((move, i) => {
+                if(i%2 === 0) {
+                  return (
+                    <tr className='text-center  font-semibold text-sm'>
+                      <td className='font-normal text-gray-400'>{i/2 + 1}.</td>
+                      <td>{move.san}</td>
+                      <td>{history[i+1]?.san}</td>
+                    </tr>
+                  )
+                } else {
+                  return 
+                }
+              })}
+            </table>
+            <div ref={tableEnd}/>
+          </div>
+          <button 
+            className=''
+            onClick={() => {
+              socket.emit('reset')
+            }}
+          >reset</button>
+          <button className='' onClick={() => {
+            socket.emit('undo')
+          }}>
+            undo
+          </button>
+        </div>
+        <div>
+          <p>Player 2</p>
+        </div>
+      </div>
     </div>
   )
 }
