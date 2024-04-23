@@ -36,7 +36,6 @@ function App() {
   const [status, setStatus] = useState('lobby')
 
   const getMoves = async (square) => {
-    console.log(turn, color[0], 'r')
     if (turn === color[0]) {
       let result = await fetch(`http://localhost:3001/moves?square=${square}&gameId=${gameId}`)
       let data = await result.json()
@@ -145,7 +144,7 @@ function App() {
 
   return (
     <div className='absolute flex flex-wrap gap-3 items-center justify-center h-full w-full select-none'>
-      <div className='absolute text-white top-0 left-0'>
+      <div className='hidden absolute text-white top-0 left-0'>
         status: {status}<br />
         color: {color}<br />
         gameId: {gameId}<br />
@@ -307,23 +306,26 @@ function gameJoinPanel({ socket, status, color, gameId }) {
         <p className='text-center text-white text-2xl font-bold'>Game Lobby</p>
       </div>
       <div className='flex gap-2 text-sm'>
-        <input id="roomInput" className='grow py-1 px-2 rounded-lg' type='text' placeholder='Enter Game Code' />
+        <input required id="roomInput" className='grow py-1 px-2 rounded-lg' type='text' placeholder='Join or create a room by entering a code' />
         <button
           className='px-2'
           onClick={() => {
+            if(!document.getElementById('roomInput').reportValidity()) {
+              return
+            }
             socket.emit('join', document.getElementById('roomInput').value)
           }}>
           Join
         </button>
         <button
-          className='px-2'
+          className='px-2 hidden'
           onClick={() => {
             socket.emit('leave', gameId)
           }}>
           Leave
         </button>
       </div>
-      <div>
+      <div className='hidden'>
         <p>Color: {color}</p>
         <p>Status: {status}</p>
         <p>Game: {gameId}</p>
