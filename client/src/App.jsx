@@ -9,8 +9,6 @@ const sounds = { move, check, capture, castle, gameOver }
 
 const socket = await io.connect("http://localhost:3001")
 
-let numToLetter = ["a", "b", "c", "d", "e", "f", "g", "h"]
-
 function App() {
   const tableEnd = useRef(null)
   let dragged = ""
@@ -36,10 +34,11 @@ function App() {
   const [color, setColor] = useState('')
   const [gameId, setGameId] = useState('')
   const [status, setStatus] = useState('lobby')
-  
+
   const getMoves = async (square) => {
-    if (turn === color) {
-      let result = await fetch(`http://localhost:3001/moves?square=${square}`)
+    console.log(turn, color[0], 'r')
+    if (turn === color[0]) {
+      let result = await fetch(`http://localhost:3001/moves?square=${square}&gameId=${gameId}`)
       let data = await result.json()
       let moves = data.moves.map(move => move.to)
       setAvailableMoves(moves)
@@ -91,7 +90,7 @@ function App() {
       socket.off('status', setStatus)
       socket.off('terminate', handleTerminate)
       socket.off('disconnect')
-      
+
     }
   }, [])
 
@@ -102,12 +101,11 @@ function App() {
     }
     setSelectedSquare('')
     setAvailableMoves([])
-    tableEnd.current?.scrollIntoView({ behavior: 'smooth' })
   }, [history])
 
   const movePiece = (move) => {
-    if (turn === color) {
-      socket.emit('move', move)
+    if (turn === color[0]) {
+      socket.emit('move', { gameId: gameId, move: move })
     }
   }
 
@@ -147,39 +145,62 @@ function App() {
 
   return (
     <div className='absolute flex flex-wrap gap-3 items-center justify-center h-full w-full select-none'>
-      <div className='absolute text-white top-1'>
-      status: {status}<br/>
-      color: {color}<br/>
-      gameId: {gameId}
-    
+      <div className='absolute text-white top-0 left-0'>
+        status: {status}<br />
+        color: {color}<br />
+        gameId: {gameId}<br />
+        turn: {turn}
       </div>
-      <div id="board" className='grid-rows-8 grid-cols-8 grid grabbable text-black h-[400px] w-[400px]'>
-        {board.map((row, i) => row.map((square, j) => {
-          let bgColor = (i + j) % 2 === 1 ? 'bg-[#739552]' : 'bg-[#EBECD0]'
-          let textColor = (i + j) % 2 === 0 ? 'text-[#739552]' : 'text-[#EBECD0]'
-          let coord = `${numToLetter[j]}${8 - i}`
-          return (
-            <div onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); }} className={`relative square flex flex-col ${bgColor} ${textColor}`} square={coord} onClick={handleSquareClick}>
-              {j === 0 && <div square={coord} className='absolute text-xs font-semibold left-[3%]'>{8 - i}</div>}
-              {i === 7 && <div square={coord} className='absolute text-xs font-semibold self-end right-[5%] top-[69%]'>{numToLetter[j]}</div>}
-              {square != null ?
-                <img
-                  src={icons[`${square.color}${square.type}`]}
-                  square={coord}
-                  className='m-auto z-20 h-[90%] w-[90%]'
-                  onDragStart={handleDragStart}
-                  draggable="true"
-                /> : ""
-              }
-              {squareUnderlay({ square: square, coord: coord, history: history, availableMoves: availableMoves, isCheck: isCheck, turn: turn, selectedSquare: selectedSquare })}
-            </div>
-          )
-        }))}
-        {isGameOver[0] && <div className='absolute bg-white font-black m-20 z-40'>
-          game over: {isGameOver[1].isCheckmate ? 'checkmate' : isGameOver[1].isDraw ? 'draw' : isGameOver[1].isStalemate ? 'stalemate' : ''}
-        </div>}
-      </div>
-      {panel({history: history, tableEnd: tableEnd, socket: socket, status: status, color: color, gameId: gameId})}
+      {chessBoard({ board: board, handleSquareClick: handleSquareClick, handleDragStart: handleDragStart, handleDrop: handleDrop, availableMoves: availableMoves, history: history, isCheck: isCheck, isGameOver: isGameOver, turn: turn, selectedSquare: selectedSquare, color: color})}
+      {panel({ history: history, tableEnd: tableEnd, socket: socket, status: status, color: color, gameId: gameId })}
+    </div>
+  )
+}
+
+function chessBoard({board, handleSquareClick, handleDragStart, handleDrop, availableMoves, history, isCheck, isGameOver, turn, selectedSquare, color}) {
+  let numToLetter = ["a", "b", "c", "d", "e", "f", "g", "h"]
+
+  let boardArr = []
+
+  for(let i = 0; i < board.length; i++) {
+    let boardInd = (color === 'white' ? i : 7 - i)
+    let row = board[boardInd]
+
+    for(let j = 0; j < board.length; j++) {
+      let rowInd = (color === 'white' ? j : 7 - j)
+      let square = row[rowInd]
+
+      let bgColor = (rowInd + boardInd) % 2 === 1 ? 'bg-[#739552]' : 'bg-[#EBECD0]'
+      let textColor = (rowInd + boardInd) % 2 === 0 ? 'text-[#739552]' : 'text-[#EBECD0]'
+      let coord = `${numToLetter[rowInd]}${8 - boardInd}`
+      boardArr.push(
+        <div onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); }} className={`relative square flex flex-col ${bgColor} ${textColor}`} square={coord} onClick={handleSquareClick}>
+          {rowInd === (color === 'white' ? 0 : 7) && <div square={coord} className='absolute text-xs font-semibold left-[3%]'>{8 - boardInd}</div>}
+          {boardInd === (color === 'white' ? 7 : 0) && <div square={coord} className='absolute text-xs font-semibold self-end right-[5%] top-[69%]'>{numToLetter[rowInd]}</div>}
+          {square != null ?
+            <img
+              src={icons[`${square.color}${square.type}`]}
+              square={coord}
+              className='m-auto z-20 h-[90%] w-[90%]'
+              onDragStart={handleDragStart}
+              draggable="true"
+            /> : ""
+          }
+          {squareUnderlay({ square: square, coord: coord, history: history, availableMoves: availableMoves, isCheck: isCheck, turn: turn, selectedSquare: selectedSquare })}
+        </div>
+      )
+    }
+  }
+
+  return (
+    <div id="board" className='relative grid-rows-8 grid-cols-8 grid grabbable text-black h-[500px] w-[500px]'>
+      {boardArr}
+      {isGameOver[0] && <div className='absolute bg-zinc-700 bg-opacity-50 h-full w-full flex items-center justify-center z-40'>
+        <div className='font-light text-center text-4xl'>
+          Game Over: <br/>
+          {isGameOver[1].isCheckmate ? 'Checkmate' : isGameOver[1].isDraw ? 'Draw' : isGameOver[1].isStalemate ? 'Stalemate' : ''}
+        </div>
+      </div>}
     </div>
   )
 }
@@ -226,14 +247,14 @@ function squareUnderlay({ square, coord, history, availableMoves, isCheck, turn,
   )
 }
 
-function controlPanel({history, tableEnd, socket, status, gameId}) {
+function controlPanel({ history, tableEnd, socket, status, gameId }) {
   return (
-    <div className='h-[400px] gap-3 w-96 bg-zinc-700 bg-opacity-90 rounded-xl p-3 flex flex-col'>
+    <div className='h-[500px] gap-3 w-96 bg-zinc-700 bg-opacity-90 rounded-xl p-3 flex flex-col'>
       <div>
         <p>Opponent</p>
       </div>
       <div className='flex flex-col gap-3 grow justify-center'>
-        <div className='h-40 overflow-auto bg-zinc-900 bg-opacity-35 rounded-xl p-2 select-text'>
+        <div ref={tableEnd} className='h-40 overflow-auto bg-zinc-900 bg-opacity-35 rounded-xl p-2 select-text'>
           <table className='w-3/5 table-auto'>
             {history.map((move, i) => {
               if (i % 2 === 0) {
@@ -249,7 +270,6 @@ function controlPanel({history, tableEnd, socket, status, gameId}) {
               }
             })}
           </table>
-          <div ref={tableEnd} />
         </div>
         <div className='grid grid-cols-2 gap-2'>
           <button className='' onClick={() => {
@@ -279,10 +299,10 @@ function controlPanel({history, tableEnd, socket, status, gameId}) {
   )
 }
 
-function gameJoinPanel({socket, status, color, gameId}) {
+function gameJoinPanel({ socket, status, color, gameId }) {
 
   return (
-    <div className='h-[400px] gap-3 w-96 bg-zinc-700 bg-opacity-90 rounded-xl p-3 flex flex-col'>
+    <div className='h-[500px] gap-3 w-96 bg-zinc-700 bg-opacity-90 rounded-xl p-3 flex flex-col'>
       <div>
         <p className='text-center text-white text-2xl font-bold'>Game Lobby</p>
       </div>
@@ -313,12 +333,12 @@ function gameJoinPanel({socket, status, color, gameId}) {
 }
 
 //render the correct panel based on the game status
-function panel({history, tableEnd, socket, status, color, gameId}) {
+function panel({ history, tableEnd, socket, status, color, gameId }) {
   //note tableEnd is a ref, i didnt want to rename it cuz id have to refactor :)
-  if(status === 'lobby' || status === 'fail') {
-    return (gameJoinPanel({socket: socket, status: status, color: color, gameId: gameId}))
+  if (status === 'lobby' || status === 'fail') {
+    return (gameJoinPanel({ socket: socket, status: status, color: color, gameId: gameId }))
   } else {
-    return (controlPanel({history: history, tableEnd: tableEnd, socket: socket, status: status, gameId: gameId}))
+    return (controlPanel({ history: history, tableEnd: tableEnd, socket: socket, status: status, gameId: gameId }))
   }
 }
 

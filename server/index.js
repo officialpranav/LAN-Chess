@@ -102,7 +102,9 @@ io.on('connection', (socket) => {
     }
   })
 
-  socket.on('move', (move, gameId) => {
+  socket.on('move', (data) => {
+    let gameId = data.gameId
+    let move = data.move
     if(games[gameId].status === 'ready') {
       games[gameId].game.move(move)
       sendPosition(io.to(gameId), gameId)
@@ -154,7 +156,8 @@ io.on('connection', (socket) => {
     }
 
     //if socket is in a room
-    if(gameId !== '') {
+    if(gameId !== '' && gameId) {
+      console.log('gg', gameId)
       //if socket is a host
       if(games[gameId].players.host === socket.id) {
         //leave room and terminate the game
@@ -178,6 +181,14 @@ io.on('connection', (socket) => {
 })
 
 app.get('/moves', (req, res) => {
+  let gameId = req.query.gameId
+  if(games[gameId]?.status !== 'ready') {
+    res.send({
+      moves: [],
+      error: 'Game not ready'
+    })
+    return
+  }
   try {
     res.send({
       moves: games[req.query.gameId].game.moves({square: req.query.square, verbose: true})
