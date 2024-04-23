@@ -1,6 +1,7 @@
 # Multiplayer Chess
 
-A local multiplayer chess game created using Express, Socket in a backend node.js server, and React and tailwindcss for the front end.
+A local multiplayer chess game.
+Created using node.js + Express and Socket for the back end, and React + tailwindcss for the front end.
 
 ![image](https://github.com/officialpranav/LAN-Chess/assets/57974336/3721ca03-ae05-4d66-a425-e1d198342390)
 
