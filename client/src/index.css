@@ -17,9 +17,10 @@
 }
 
 body {
-  background-image: url('./assets/images/wood-bg.jpg');
+  /*background-image: url('./assets/images/wood-bg.jpg');
   background-size: cover;
-  background-attachment: fixed;
+  background-attachment: fixed;*/
+  background-color: #1a1a1a;
 }
 
 a {
@@ -39,20 +40,18 @@ h1 {
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
+  padding: 0.25rem;
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.1s;
 }
 button:hover {
   border-color: #646cff;
 }
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+button:active {
+  background-color: #1f1f1f;
+  border-color: #960707;
 }
 
 
@@ -67,4 +66,13 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.grabbable {
+  cursor: grab;
+}
+
+/* (Optional) Apply a "closed-hand" cursor during drag operation. */
+.grabbable:active {
+  cursor: grabbing;
 }
