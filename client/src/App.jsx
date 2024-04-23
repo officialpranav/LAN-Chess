@@ -290,6 +290,12 @@ function controlPanel({ history, tableEnd, socket, status, gameId }) {
           }}>
           Leave
         </button>
+        {status === 'waiting' && <div>
+          <p>Waiting for opponent to connect...</p>
+        </div>}
+        {status === 'ready' && <div className='text-xs text-gray-500'>
+          <p>Connected to Room: <em className='text-emerald-700'>{gameId}</em></p>
+        </div>}
       </div>
       <div>
         <p>You</p>
