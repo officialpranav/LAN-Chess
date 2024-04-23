@@ -2,6 +2,7 @@
 
 A local multiplayer chess game.
 Created using node.js + Express and Socket for the back end, and React + tailwindcss for the front end.
+chess.js libary from npm was used for the chess engine.
 
 ![image](https://github.com/officialpranav/LAN-Chess/assets/57974336/3721ca03-ae05-4d66-a425-e1d198342390)
 
