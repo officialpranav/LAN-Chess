@@ -7,6 +7,6 @@ A local multiplayer chess game created using Express, Socket in a backend node.j
 To run:
 1. Ensure both computers are on the same network.
 2. One one of the computers, navigate to /server and run `npm run start` from the terminal. Then navigate to /client and run `npm run dev` from the terminal.
-4. open localhost:5173 on both players' computers, and begin playing.
+4. open localhost:5173 on both players' web browsers, and begin playing.
 
 ### Credits to chess.com for chess piece icons.
