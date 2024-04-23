@@ -194,8 +194,8 @@ function chessBoard({board, handleSquareClick, handleDragStart, handleDrop, avai
   return (
     <div id="board" className='relative grid-rows-8 grid-cols-8 grid grabbable text-black h-[500px] w-[500px]'>
       {boardArr}
-      {isGameOver[0] && <div className='absolute bg-zinc-700 bg-opacity-50 h-full w-full flex items-center justify-center z-40'>
-        <div className='font-light text-center text-4xl'>
+      {isGameOver[0] && <div className='absolute bg-zinc-800 bg-opacity-80 h-full w-full flex items-center justify-center z-40'>
+        <div className='font-light text-white text-center text-4xl'>
           Game Over: <br/>
           {isGameOver[1].isCheckmate ? 'Checkmate' : isGameOver[1].isDraw ? 'Draw' : isGameOver[1].isStalemate ? 'Stalemate' : ''}
         </div>
