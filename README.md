@@ -9,4 +9,8 @@ To run:
 2. One one of the computers, navigate to /server and run `npm run start` from the terminal. Then navigate to /client and run `npm run dev` from the terminal.
 4. open localhost:5173 on both players' web browsers, and begin playing.
 
+Todo:
+- pawn promotion
+- add toasts to alert user
+
 ### Credits to chess.com for chess piece icons.
