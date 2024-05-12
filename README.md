@@ -1,7 +1,7 @@
 # Multiplayer Chess
 
 A local multiplayer chess game.
-Created using node.js + Express and Socket for the back end, and React + tailwindcss for the front end. 
+Created using node.js + Express + Socket.io, and React + tailwindcss. 
 
 The [Chess.js](https://www.npmjs.com/package/chess.js?utm_source=infosec-jobs.com&utm_medium=infosec-jobs.com&utm_campaign=infosec-jobs.com&source=infosec-jobs.com) libary from npm was used for the chess engine.
 
